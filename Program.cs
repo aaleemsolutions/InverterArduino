@@ -53,7 +53,8 @@ class Program
 
             mqttClient.UseApplicationMessageReceivedHandler(e =>
             {
-                Console.WriteLine($" Received message: {Encoding.UTF8.GetString(e.ApplicationMessage.Payload)}");
+               var message = e.ApplicationMessage.Payload!=null ? Encoding.UTF8.GetString(e.ApplicationMessage.Payload) : "";
+                Console.WriteLine($" Received message: {message}");
             });
 
             mqttClient.UseDisconnectedHandler(e =>
@@ -76,9 +77,12 @@ class Program
                     {
                         WifiSsid = settings.WiFi.SSID,
                         WifiPassword = settings.WiFi.Password,
-                        Baudrate =   settings.SerialConfig.BaudRate,
-                        TxPin = settings.SerialConfig.TxPin,
-                        RxPin = settings.SerialConfig.RxPin
+                        config = new ConfigDetails
+                        {
+                            baudRate = settings.SerialConfig.BaudRate,
+                            txPin = settings.SerialConfig.TxPin,
+                            rxPin = settings.SerialConfig.RxPin
+                        }
                     };
 
                     jsonPayload = JsonSerializer.Serialize(config);
@@ -87,7 +91,7 @@ class Program
                 {
                     var command = new CommandMessage
                     {
-                        Action = Prompt("Enter Command (e.g., readStatus, restart)")
+                        command = Prompt("Enter Command (e.g., QPIGS, restart)")
                     };
                     jsonPayload = JsonSerializer.Serialize(command);
                 }
@@ -104,8 +108,9 @@ class Program
                     .WithRetainFlag(false)
                     .Build();
 
+                Console.WriteLine($"Sending payload: {jsonPayload}");
                 await mqttClient.PublishAsync(message);
-                Console.WriteLine(" Message sent.\n");
+                Console.WriteLine("Message sent.\n");
             }
 
 
